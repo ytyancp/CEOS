@@ -1,0 +1,752 @@
+Target Buggy Module,Action Rule Guidance (with LLM),Test Case,Status,Pass test after 10 trials,Fail test after 10 trials,Success Rate
+org.gjt.sp.jedit.gui.DockableWindowManager.java,"The class `DockableWindowManager` appears too broad for its current responsibilities in managing dockable windows, layout updates, and UI state transitions. To reduce defect risk, keep the public workflow small and move mutable state and branch-heavy logic into focused collaborators. In jEdit terms, prefer a thin coordinator in `DockableWindowManager` and delegate intermediate state handling to a helper such as `DockableLayoutState`.
+
+```java
+// jEdit-oriented direction for DockableWindowManager
+final class DockableLayoutState {
+    void validate() { /* invariants for managing dockable windows, layout updates, and UI state transitions */ }
+    void updateFromInput(...) { /* normalize arguments and state */ }
+}
+
+public class DockableWindowManager {
+    private final dockableLayoutState state = new DockableLayoutState();
+
+    public void registerDockable(...) {
+        state.validate();
+        doRegisterDockable(...);
+    }
+
+    private void doRegisterDockable(...) { /* focused operation */ }
+    private void showDockable(...) { /* split another branch-heavy path */ }
+}
+```
+
+When editing this file, avoid adding more flags or shared mutable fields to `DockableWindowManager`. Instead, extract branch-heavy blocks, isolate state validation, and keep each method focused on one jEdit action path.",DockableWindowManagerTest.java,PASS,10,0,1
+org.gjt.sp.jedit.gui.DockableWindowManager.java,"Please revise `DockableWindowManager` using jEdit-specific behavior rather than generic cleanup. Focus on the bug-prone paths covered by the current test case: validate null-sensitive inputs, preserve existing editor semantics, and keep state transitions explicit.
+
+Practical checks for `DockableWindowManager`:
+1. guard invalid or stale inputs before mutating shared state;
+2. keep one entry point for the main workflow and move side effects into private helpers;
+3. preserve existing jEdit conventions for UI/VFS/buffer interaction in this file;
+4. add comments only where an invariant or ordering constraint is non-obvious.
+
+Use small, behavior-preserving edits around `registerDockable`, `showDockable`, and `hideDockable` style workflows instead of broad rewrites.",DockableWindowManagerTest.java,PASS,5,5,0.5
+org.gjt.sp.jedit.textarea.JEditTextArea.java,"`JEditTextArea` shows signs of excessive outward coordination. In this jEdit module, the safer fix is to introduce a narrow internal helper that centralizes repeated external calls, so that `JEditTextArea` keeps the control flow while the helper owns the integration details.
+
+```java
+// jEdit-oriented direction for JEditTextArea
+final class SelectionState {
+    void prepare(...) { /* collect and normalize inputs */ }
+    void execute(...) { /* encapsulate repeated external/service calls */ }
+}
+
+public class JEditTextArea {
+    private final selectionState helper = new SelectionState();
+
+    public void moveCaret(...) {
+        helper.prepare(...);
+        helper.execute(...);
+    }
+}
+```
+
+For `JEditTextArea`, prioritize collapsing duplicated call chains, moving validation into one place, and shrinking long workflow methods. The goal is not to add another abstraction layer everywhere, but to make the core `JEditTextArea` path easier to reason about and test with the existing jEdit test case.",JEditTextAreaTest.java,PASS,10,0,1
+org.gjt.sp.jedit.textarea.JEditTextArea.java,"Review `JEditTextArea` for jEdit-specific edge cases, especially around caret movement, selection updates, repaint logic, and buffer/view synchronization. The main goal is to make failure handling explicit without changing the externally visible behavior.
+
+Focus your fix on:
+- null or stale objects crossing subsystem boundaries;
+- invalid index/range/state checks before the main action runs;
+- ordering constraints between `moveCaret`, `setSelection`, and `scrollToCaret`;
+- early returns for unsupported states instead of deep nested branching.
+
+A good patch for `JEditTextArea` should make the preconditions obvious, isolate exceptional handling in a helper method, and keep the normal path short.",JEditTextAreaTest.java,FAIL,3,7,0.3
+org.gjt.sp.jedit.print.PrintManager.java,"The class `PrintManager` appears too broad for its current responsibilities in print job setup, page range validation, and handoff to printer-specific services. To reduce defect risk, keep the public workflow small and move mutable state and branch-heavy logic into focused collaborators. In jEdit terms, prefer a thin coordinator in `PrintManager` and delegate intermediate state handling to a helper such as `PrintJobContext`.
+
+```java
+// jEdit-oriented direction for PrintManager
+final class PrintJobContext {
+    void validate() { /* invariants for print job setup, page range validation, and handoff to printer-specific services */ }
+    void updateFromInput(...) { /* normalize arguments and state */ }
+}
+
+public class PrintManager {
+    private final printJobContext state = new PrintJobContext();
+
+    public void buildPrintJob(...) {
+        state.validate();
+        doBuildPrintJob(...);
+    }
+
+    private void doBuildPrintJob(...) { /* focused operation */ }
+    private void validatePageRange(...) { /* split another branch-heavy path */ }
+}
+```
+
+When editing this file, avoid adding more flags or shared mutable fields to `PrintManager`. Instead, extract branch-heavy blocks, isolate state validation, and keep each method focused on one jEdit action path.",PrintManagerTest.java,PASS,10,0,1
+org.gjt.sp.jedit.print.PrintManager.java,"Please revise `PrintManager` using jEdit-specific behavior rather than generic cleanup. Focus on the bug-prone paths covered by the current test case: validate null-sensitive inputs, preserve existing editor semantics, and keep state transitions explicit.
+
+Practical checks for `PrintManager`:
+1. guard invalid or stale inputs before mutating shared state;
+2. keep one entry point for the main workflow and move side effects into private helpers;
+3. preserve existing jEdit conventions for UI/VFS/buffer interaction in this file;
+4. add comments only where an invariant or ordering constraint is non-obvious.
+
+Use small, behavior-preserving edits around `buildPrintJob`, `validatePageRange`, and `submitJob` style workflows instead of broad rewrites.",PrintManagerTest.java,PASS,6,4,0.6
+org.gjt.sp.jedit.buffer.BufferIORequest.java,"The class `BufferIORequest` appears too broad for its current responsibilities in buffer load/save orchestration, I/O validation, and error reporting. To reduce defect risk, keep the public workflow small and move mutable state and branch-heavy logic into focused collaborators. In jEdit terms, prefer a thin coordinator in `BufferIORequest` and delegate intermediate state handling to a helper such as `IOContext`.
+
+```java
+// jEdit-oriented direction for BufferIORequest
+final class IOContext {
+    void validate() { /* invariants for buffer load/save orchestration, I/O validation, and error reporting */ }
+    void updateFromInput(...) { /* normalize arguments and state */ }
+}
+
+public class BufferIORequest {
+    private final iOContext state = new IOContext();
+
+    public void readBuffer(...) {
+        state.validate();
+        doReadBuffer(...);
+    }
+
+    private void doReadBuffer(...) { /* focused operation */ }
+    private void writeBuffer(...) { /* split another branch-heavy path */ }
+}
+```
+
+When editing this file, avoid adding more flags or shared mutable fields to `BufferIORequest`. Instead, extract branch-heavy blocks, isolate state validation, and keep each method focused on one jEdit action path.",BufferIORequestTest.java,PASS,8,2,0.8
+org.gjt.sp.jedit.buffer.BufferIORequest.java,"Review `BufferIORequest` for jEdit-specific edge cases, especially around buffer load/save orchestration, I/O validation, and error reporting. The main goal is to make failure handling explicit without changing the externally visible behavior.
+
+Focus your fix on:
+- null or stale objects crossing subsystem boundaries;
+- invalid index/range/state checks before the main action runs;
+- ordering constraints between `readBuffer`, `writeBuffer`, and `handleIOException`;
+- early returns for unsupported states instead of deep nested branching.
+
+A good patch for `BufferIORequest` should make the preconditions obvious, isolate exceptional handling in a helper method, and keep the normal path short.",BufferIORequestTest.java,FAIL,4,6,0.4
+org.gjt.sp.jedit.browser.VFSBrowser.java,"The class `VFSBrowser` appears too broad for its current responsibilities in directory navigation, view refresh, and VFS interaction. To reduce defect risk, keep the public workflow small and move mutable state and branch-heavy logic into focused collaborators. In jEdit terms, prefer a thin coordinator in `VFSBrowser` and delegate intermediate state handling to a helper such as `BrowserSession`.
+
+```java
+// jEdit-oriented direction for VFSBrowser
+final class BrowserSession {
+    void validate() { /* invariants for directory navigation, view refresh, and VFS interaction */ }
+    void updateFromInput(...) { /* normalize arguments and state */ }
+}
+
+public class VFSBrowser {
+    private final browserSession state = new BrowserSession();
+
+    public void loadDirectory(...) {
+        state.validate();
+        doLoadDirectory(...);
+    }
+
+    private void doLoadDirectory(...) { /* focused operation */ }
+    private void refreshDirectory(...) { /* split another branch-heavy path */ }
+}
+```
+
+When editing this file, avoid adding more flags or shared mutable fields to `VFSBrowser`. Instead, extract branch-heavy blocks, isolate state validation, and keep each method focused on one jEdit action path.",VFSBrowserTest.java,PASS,10,0,1
+org.gjt.sp.jedit.browser.VFSBrowser.java,"Review `VFSBrowser` for jEdit-specific edge cases, especially around directory navigation, view refresh, and VFS interaction. The main goal is to make failure handling explicit without changing the externally visible behavior.
+
+Focus your fix on:
+- null or stale objects crossing subsystem boundaries;
+- invalid index/range/state checks before the main action runs;
+- ordering constraints between `loadDirectory`, `refreshDirectory`, and `selectEntry`;
+- early returns for unsupported states instead of deep nested branching.
+
+A good patch for `VFSBrowser` should make the preconditions obvious, isolate exceptional handling in a helper method, and keep the normal path short.",VFSBrowserTest.java,FAIL,4,6,0.4
+org.gjt.sp.jedit.print.PrintManager.java,"`PrintManager` appears tightly coupled to too many concrete collaborators. In jEdit, a practical fix is to depend on small internal abstractions or injected collaborators for the high-churn integration points, while keeping `PrintManager` responsible only for orchestration.
+
+```java
+// jEdit-oriented direction for PrintManager
+interface PrintJobContextService {
+    void buildPrintJob(...);
+}
+
+public class PrintManager {
+    private final PrintJobContextService service;
+
+    public PrintManager(PrintJobContextService service) {
+        this.service = service;
+    }
+
+    public void validatePageRange(...) {
+        service.buildPrintJob(...);
+    }
+}
+```
+
+In this file, replace direct construction of concrete services inside hot paths, isolate plugin/VFS/UI dependencies behind one seam, and keep jEdit-specific policies inside `PrintManager` instead of scattering them across many direct calls.",PrintManagerTest.java,PASS,8,2,0.8
+org.gjt.sp.jedit.print.PrintManager.java,"Review `PrintManager` for jEdit-specific edge cases, especially around print job setup, page range validation, and handoff to printer-specific services. The main goal is to make failure handling explicit without changing the externally visible behavior.
+
+Focus your fix on:
+- null or stale objects crossing subsystem boundaries;
+- invalid index/range/state checks before the main action runs;
+- ordering constraints between `buildPrintJob`, `validatePageRange`, and `submitJob`;
+- early returns for unsupported states instead of deep nested branching.
+
+A good patch for `PrintManager` should make the preconditions obvious, isolate exceptional handling in a helper method, and keep the normal path short.",PrintManagerTest.java,PASS,6,4,0.6
+org.gjt.sp.jedit.search.SearchAndReplace.java,"The class `SearchAndReplace` appears too broad for its current responsibilities in search option normalization, match execution, and replace workflow coordination. To reduce defect risk, keep the public workflow small and move mutable state and branch-heavy logic into focused collaborators. In jEdit terms, prefer a thin coordinator in `SearchAndReplace` and delegate intermediate state handling to a helper such as `SearchRequest`.
+
+```java
+// jEdit-oriented direction for SearchAndReplace
+final class SearchRequest {
+    void validate() { /* invariants for search option normalization, match execution, and replace workflow coordination */ }
+    void updateFromInput(...) { /* normalize arguments and state */ }
+}
+
+public class SearchAndReplace {
+    private final searchRequest state = new SearchRequest();
+
+    public void normalizeSearchOptions(...) {
+        state.validate();
+        doNormalizeSearchOptions(...);
+    }
+
+    private void doNormalizeSearchOptions(...) { /* focused operation */ }
+    private void findNextMatch(...) { /* split another branch-heavy path */ }
+}
+```
+
+When editing this file, avoid adding more flags or shared mutable fields to `SearchAndReplace`. Instead, extract branch-heavy blocks, isolate state validation, and keep each method focused on one jEdit action path.",SearchAndReplaceTest.java,PASS,8,2,0.8
+org.gjt.sp.jedit.search.SearchAndReplace.java,"Refactor `SearchAndReplace` in a way that matches jEdit’s architecture. This class currently appears too large for its role in search option normalization, match execution, and replace workflow coordination. Instead of a generic size reduction, extract one cohesive helper around the most change-prone responsibility and keep `SearchAndReplace` as the coordinator.
+
+Suggested direction:
+- keep public entry points stable;
+- extract one helper for state preparation or validation;
+- break long methods into `normalizeSearchOptions`, `findNextMatch`, and `replaceCurrentMatch` level private steps;
+- avoid introducing unrelated utility classes that hide jEdit semantics.
+
+The preferred result is smaller methods, clearer state transitions, and a patch that still reads like jEdit code rather than a framework-neutral example.",SearchAndReplaceTest.java,PASS,6,4,0.6
+org.gjt.sp.jedit.search.SearchAndReplace.java,"`SearchAndReplace` shows signs of excessive outward coordination. In this jEdit module, the safer fix is to introduce a narrow internal helper that centralizes repeated external calls, so that `SearchAndReplace` keeps the control flow while the helper owns the integration details.
+
+```java
+// jEdit-oriented direction for SearchAndReplace
+final class SearchRequest {
+    void prepare(...) { /* collect and normalize inputs */ }
+    void execute(...) { /* encapsulate repeated external/service calls */ }
+}
+
+public class SearchAndReplace {
+    private final searchRequest helper = new SearchRequest();
+
+    public void normalizeSearchOptions(...) {
+        helper.prepare(...);
+        helper.execute(...);
+    }
+}
+```
+
+For `SearchAndReplace`, prioritize collapsing duplicated call chains, moving validation into one place, and shrinking long workflow methods. The goal is not to add another abstraction layer everywhere, but to make the core `SearchAndReplace` path easier to reason about and test with the existing jEdit test case.",SearchAndReplaceTest.java,PASS,8,2,0.8
+org.gjt.sp.jedit.search.SearchAndReplace.java,"Please revise `SearchAndReplace` using jEdit-specific behavior rather than generic cleanup. Focus on the bug-prone paths covered by the current test case: validate null-sensitive inputs, preserve existing editor semantics, and keep state transitions explicit.
+
+Practical checks for `SearchAndReplace`:
+1. guard invalid or stale inputs before mutating shared state;
+2. keep one entry point for the main workflow and move side effects into private helpers;
+3. preserve existing jEdit conventions for UI/VFS/buffer interaction in this file;
+4. add comments only where an invariant or ordering constraint is non-obvious.
+
+Use small, behavior-preserving edits around `normalizeSearchOptions`, `findNextMatch`, and `replaceCurrentMatch` style workflows instead of broad rewrites.",SearchAndReplaceTest.java,PASS,5,5,0.5
+org.gjt.sp.jedit.gui.DockableWindowManager.java,"`DockableWindowManager` appears tightly coupled to too many concrete collaborators. In jEdit, a practical fix is to depend on small internal abstractions or injected collaborators for the high-churn integration points, while keeping `DockableWindowManager` responsible only for orchestration.
+
+```java
+// jEdit-oriented direction for DockableWindowManager
+interface DockableLayoutStateService {
+    void registerDockable(...);
+}
+
+public class DockableWindowManager {
+    private final DockableLayoutStateService service;
+
+    public DockableWindowManager(DockableLayoutStateService service) {
+        this.service = service;
+    }
+
+    public void showDockable(...) {
+        service.registerDockable(...);
+    }
+}
+```
+
+In this file, replace direct construction of concrete services inside hot paths, isolate plugin/VFS/UI dependencies behind one seam, and keep jEdit-specific policies inside `DockableWindowManager` instead of scattering them across many direct calls.",DockableWindowManagerTest.java,PASS,8,2,0.8
+org.gjt.sp.jedit.gui.DockableWindowManager.java,"Refactor `DockableWindowManager` in a way that matches jEdit’s architecture. This class currently appears too large for its role in managing dockable windows, layout updates, and UI state transitions. Instead of a generic size reduction, extract one cohesive helper around the most change-prone responsibility and keep `DockableWindowManager` as the coordinator.
+
+Suggested direction:
+- keep public entry points stable;
+- extract one helper for state preparation or validation;
+- break long methods into `registerDockable`, `showDockable`, and `hideDockable` level private steps;
+- avoid introducing unrelated utility classes that hide jEdit semantics.
+
+The preferred result is smaller methods, clearer state transitions, and a patch that still reads like jEdit code rather than a framework-neutral example.",DockableWindowManagerTest.java,PASS,5,5,0.5
+org.gjt.sp.jedit.browser.VFSBrowser.java,"`VFSBrowser` mixes responsibilities that should evolve independently. For jEdit code, the safer refactoring is to separate UI/configuration state from workflow/control logic, so each extracted class has one coherent reason to change.
+
+```java
+// jEdit-oriented direction for VFSBrowser
+final class BrowserSession {
+    void load(...) { /* read or prepare state */ }
+    void save(...) { /* persist state */ }
+}
+
+public class VFSBrowser {
+    private final browserSession registry = new BrowserSession();
+
+    public void loadDirectory(...) { /* workflow logic */ }
+    public void refreshDirectory(...) { /* workflow logic */ }
+}
+```
+
+When modifying `VFSBrowser`, group methods by the state they actually use. If two methods do not share fields or invariants, move them into a dedicated helper instead of leaving unrelated behavior in the same class.",VFSBrowserTest.java,PASS,8,2,0.8
+org.gjt.sp.jedit.browser.VFSBrowser.java,"Review `VFSBrowser` for jEdit-specific edge cases, especially around directory navigation, view refresh, and VFS interaction. The main goal is to make failure handling explicit without changing the externally visible behavior.
+
+Focus your fix on:
+- null or stale objects crossing subsystem boundaries;
+- invalid index/range/state checks before the main action runs;
+- ordering constraints between `loadDirectory`, `refreshDirectory`, and `selectEntry`;
+- early returns for unsupported states instead of deep nested branching.
+
+A good patch for `VFSBrowser` should make the preconditions obvious, isolate exceptional handling in a helper method, and keep the normal path short.",VFSBrowserTest.java,PASS,6,4,0.6
+org.gjt.sp.jedit.gui.DockableWindowManager.java,"`DockableWindowManager` appears tightly coupled to too many concrete collaborators. In jEdit, a practical fix is to depend on small internal abstractions or injected collaborators for the high-churn integration points, while keeping `DockableWindowManager` responsible only for orchestration.
+
+```java
+// jEdit-oriented direction for DockableWindowManager
+interface DockableLayoutStateService {
+    void registerDockable(...);
+}
+
+public class DockableWindowManager {
+    private final DockableLayoutStateService service;
+
+    public DockableWindowManager(DockableLayoutStateService service) {
+        this.service = service;
+    }
+
+    public void showDockable(...) {
+        service.registerDockable(...);
+    }
+}
+```
+
+In this file, replace direct construction of concrete services inside hot paths, isolate plugin/VFS/UI dependencies behind one seam, and keep jEdit-specific policies inside `DockableWindowManager` instead of scattering them across many direct calls.",DockableWindowManagerTest.java,PASS,8,2,0.8
+org.gjt.sp.jedit.gui.DockableWindowManager.java,"Review `DockableWindowManager` for jEdit-specific edge cases, especially around managing dockable windows, layout updates, and UI state transitions. The main goal is to make failure handling explicit without changing the externally visible behavior.
+
+Focus your fix on:
+- null or stale objects crossing subsystem boundaries;
+- invalid index/range/state checks before the main action runs;
+- ordering constraints between `registerDockable`, `showDockable`, and `hideDockable`;
+- early returns for unsupported states instead of deep nested branching.
+
+A good patch for `DockableWindowManager` should make the preconditions obvious, isolate exceptional handling in a helper method, and keep the normal path short.",DockableWindowManagerTest.java,PASS,5,5,0.5
+org.gjt.sp.jedit.browser.VFSBrowser.java,"`VFSBrowser` mixes responsibilities that should evolve independently. For jEdit code, the safer refactoring is to separate UI/configuration state from workflow/control logic, so each extracted class has one coherent reason to change.
+
+```java
+// jEdit-oriented direction for VFSBrowser
+final class BrowserSession {
+    void load(...) { /* read or prepare state */ }
+    void save(...) { /* persist state */ }
+}
+
+public class VFSBrowser {
+    private final browserSession registry = new BrowserSession();
+
+    public void loadDirectory(...) { /* workflow logic */ }
+    public void refreshDirectory(...) { /* workflow logic */ }
+}
+```
+
+When modifying `VFSBrowser`, group methods by the state they actually use. If two methods do not share fields or invariants, move them into a dedicated helper instead of leaving unrelated behavior in the same class.",VFSBrowserTest.java,PASS,10,0,1
+org.gjt.sp.jedit.browser.VFSBrowser.java,"Review `VFSBrowser` for jEdit-specific edge cases, especially around directory navigation, view refresh, and VFS interaction. The main goal is to make failure handling explicit without changing the externally visible behavior.
+
+Focus your fix on:
+- null or stale objects crossing subsystem boundaries;
+- invalid index/range/state checks before the main action runs;
+- ordering constraints between `loadDirectory`, `refreshDirectory`, and `selectEntry`;
+- early returns for unsupported states instead of deep nested branching.
+
+A good patch for `VFSBrowser` should make the preconditions obvious, isolate exceptional handling in a helper method, and keep the normal path short.",VFSBrowserTest.java,FAIL,4,6,0.4
+org.gjt.sp.jedit.gui.DockableWindowManager.java,"The class `DockableWindowManager` appears too broad for its current responsibilities in managing dockable windows, layout updates, and UI state transitions. To reduce defect risk, keep the public workflow small and move mutable state and branch-heavy logic into focused collaborators. In jEdit terms, prefer a thin coordinator in `DockableWindowManager` and delegate intermediate state handling to a helper such as `DockableLayoutState`.
+
+```java
+// jEdit-oriented direction for DockableWindowManager
+final class DockableLayoutState {
+    void validate() { /* invariants for managing dockable windows, layout updates, and UI state transitions */ }
+    void updateFromInput(...) { /* normalize arguments and state */ }
+}
+
+public class DockableWindowManager {
+    private final dockableLayoutState state = new DockableLayoutState();
+
+    public void registerDockable(...) {
+        state.validate();
+        doRegisterDockable(...);
+    }
+
+    private void doRegisterDockable(...) { /* focused operation */ }
+    private void showDockable(...) { /* split another branch-heavy path */ }
+}
+```
+
+When editing this file, avoid adding more flags or shared mutable fields to `DockableWindowManager`. Instead, extract branch-heavy blocks, isolate state validation, and keep each method focused on one jEdit action path.",DockableWindowManagerTest.java,PASS,10,0,1
+org.gjt.sp.jedit.gui.DockableWindowManager.java,"Refactor `DockableWindowManager` in a way that matches jEdit’s architecture. This class currently appears too large for its role in managing dockable windows, layout updates, and UI state transitions. Instead of a generic size reduction, extract one cohesive helper around the most change-prone responsibility and keep `DockableWindowManager` as the coordinator.
+
+Suggested direction:
+- keep public entry points stable;
+- extract one helper for state preparation or validation;
+- break long methods into `registerDockable`, `showDockable`, and `hideDockable` level private steps;
+- avoid introducing unrelated utility classes that hide jEdit semantics.
+
+The preferred result is smaller methods, clearer state transitions, and a patch that still reads like jEdit code rather than a framework-neutral example.",DockableWindowManagerTest.java,FAIL,4,6,0.4
+org.gjt.sp.jedit.gui.DockableWindowManager.java,"`DockableWindowManager` shows signs of excessive outward coordination. In this jEdit module, the safer fix is to introduce a narrow internal helper that centralizes repeated external calls, so that `DockableWindowManager` keeps the control flow while the helper owns the integration details.
+
+```java
+// jEdit-oriented direction for DockableWindowManager
+final class DockableLayoutState {
+    void prepare(...) { /* collect and normalize inputs */ }
+    void execute(...) { /* encapsulate repeated external/service calls */ }
+}
+
+public class DockableWindowManager {
+    private final dockableLayoutState helper = new DockableLayoutState();
+
+    public void registerDockable(...) {
+        helper.prepare(...);
+        helper.execute(...);
+    }
+}
+```
+
+For `DockableWindowManager`, prioritize collapsing duplicated call chains, moving validation into one place, and shrinking long workflow methods. The goal is not to add another abstraction layer everywhere, but to make the core `DockableWindowManager` path easier to reason about and test with the existing jEdit test case.",DockableWindowManagerTest.java,PASS,8,2,0.8
+org.gjt.sp.jedit.gui.DockableWindowManager.java,"Refactor `DockableWindowManager` in a way that matches jEdit’s architecture. This class currently appears too large for its role in managing dockable windows, layout updates, and UI state transitions. Instead of a generic size reduction, extract one cohesive helper around the most change-prone responsibility and keep `DockableWindowManager` as the coordinator.
+
+Suggested direction:
+- keep public entry points stable;
+- extract one helper for state preparation or validation;
+- break long methods into `registerDockable`, `showDockable`, and `hideDockable` level private steps;
+- avoid introducing unrelated utility classes that hide jEdit semantics.
+
+The preferred result is smaller methods, clearer state transitions, and a patch that still reads like jEdit code rather than a framework-neutral example.",DockableWindowManagerTest.java,PASS,6,4,0.6
+org.gjt.sp.jedit.options.GlobalOptions.java,"`GlobalOptions` mixes responsibilities that should evolve independently. For jEdit code, the safer refactoring is to separate UI/configuration state from workflow/control logic, so each extracted class has one coherent reason to change.
+
+```java
+// jEdit-oriented direction for GlobalOptions
+final class OptionPanelRegistry {
+    void load(...) { /* read or prepare state */ }
+    void save(...) { /* persist state */ }
+}
+
+public class GlobalOptions {
+    private final optionPanelRegistry registry = new OptionPanelRegistry();
+
+    public void buildOptionPanels(...) { /* workflow logic */ }
+    public void loadOptionValues(...) { /* workflow logic */ }
+}
+```
+
+When modifying `GlobalOptions`, group methods by the state they actually use. If two methods do not share fields or invariants, move them into a dedicated helper instead of leaving unrelated behavior in the same class.",GlobalOptionsTest.java,PASS,8,2,0.8
+org.gjt.sp.jedit.options.GlobalOptions.java,"Refactor `GlobalOptions` in a way that matches jEdit’s architecture. This class currently appears too large for its role in option panel registration, persistence, and UI binding. Instead of a generic size reduction, extract one cohesive helper around the most change-prone responsibility and keep `GlobalOptions` as the coordinator.
+
+Suggested direction:
+- keep public entry points stable;
+- extract one helper for state preparation or validation;
+- break long methods into `buildOptionPanels`, `loadOptionValues`, and `saveOptionValues` level private steps;
+- avoid introducing unrelated utility classes that hide jEdit semantics.
+
+The preferred result is smaller methods, clearer state transitions, and a patch that still reads like jEdit code rather than a framework-neutral example.",GlobalOptionsTest.java,PASS,5,5,0.5
+org.gjt.sp.jedit.textarea.JEditTextArea.java,"`JEditTextArea` mixes responsibilities that should evolve independently. For jEdit code, the safer refactoring is to separate UI/configuration state from workflow/control logic, so each extracted class has one coherent reason to change.
+
+```java
+// jEdit-oriented direction for JEditTextArea
+final class SelectionState {
+    void load(...) { /* read or prepare state */ }
+    void save(...) { /* persist state */ }
+}
+
+public class JEditTextArea {
+    private final selectionState registry = new SelectionState();
+
+    public void moveCaret(...) { /* workflow logic */ }
+    public void setSelection(...) { /* workflow logic */ }
+}
+```
+
+When modifying `JEditTextArea`, group methods by the state they actually use. If two methods do not share fields or invariants, move them into a dedicated helper instead of leaving unrelated behavior in the same class.",JEditTextAreaTest.java,PASS,10,0,1
+org.gjt.sp.jedit.textarea.JEditTextArea.java,"Review `JEditTextArea` for jEdit-specific edge cases, especially around caret movement, selection updates, repaint logic, and buffer/view synchronization. The main goal is to make failure handling explicit without changing the externally visible behavior.
+
+Focus your fix on:
+- null or stale objects crossing subsystem boundaries;
+- invalid index/range/state checks before the main action runs;
+- ordering constraints between `moveCaret`, `setSelection`, and `scrollToCaret`;
+- early returns for unsupported states instead of deep nested branching.
+
+A good patch for `JEditTextArea` should make the preconditions obvious, isolate exceptional handling in a helper method, and keep the normal path short.",JEditTextAreaTest.java,FAIL,3,7,0.3
+org.gjt.sp.jedit.bsh.BSHMethodDeclaration.java,"`BSHMethodDeclaration` shows signs of excessive outward coordination. In this jEdit module, the safer fix is to introduce a narrow internal helper that centralizes repeated external calls, so that `BSHMethodDeclaration` keeps the control flow while the helper owns the integration details.
+
+```java
+// jEdit-oriented direction for BSHMethodDeclaration
+final class MethodDeclContext {
+    void prepare(...) { /* collect and normalize inputs */ }
+    void execute(...) { /* encapsulate repeated external/service calls */ }
+}
+
+public class BSHMethodDeclaration {
+    private final methodDeclContext helper = new MethodDeclContext();
+
+    public void parseReturnType(...) {
+        helper.prepare(...);
+        helper.execute(...);
+    }
+}
+```
+
+For `BSHMethodDeclaration`, prioritize collapsing duplicated call chains, moving validation into one place, and shrinking long workflow methods. The goal is not to add another abstraction layer everywhere, but to make the core `BSHMethodDeclaration` path easier to reason about and test with the existing jEdit test case.",BSHMethodDeclarationTest.java,PASS,8,2,0.8
+org.gjt.sp.jedit.bsh.BSHMethodDeclaration.java,"Refactor `BSHMethodDeclaration` in a way that matches jEdit’s architecture. This class currently appears too large for its role in BeanShell method declaration parsing, parameter validation, and namespace setup. Instead of a generic size reduction, extract one cohesive helper around the most change-prone responsibility and keep `BSHMethodDeclaration` as the coordinator.
+
+Suggested direction:
+- keep public entry points stable;
+- extract one helper for state preparation or validation;
+- break long methods into `parseReturnType`, `bindParameters`, and `installMethodInNamespace` level private steps;
+- avoid introducing unrelated utility classes that hide jEdit semantics.
+
+The preferred result is smaller methods, clearer state transitions, and a patch that still reads like jEdit code rather than a framework-neutral example.",BSHMethodDeclarationTest.java,PASS,6,4,0.6
+org.gjt.sp.jedit.search.SearchAndReplace.java,"`SearchAndReplace` shows signs of excessive outward coordination. In this jEdit module, the safer fix is to introduce a narrow internal helper that centralizes repeated external calls, so that `SearchAndReplace` keeps the control flow while the helper owns the integration details.
+
+```java
+// jEdit-oriented direction for SearchAndReplace
+final class SearchRequest {
+    void prepare(...) { /* collect and normalize inputs */ }
+    void execute(...) { /* encapsulate repeated external/service calls */ }
+}
+
+public class SearchAndReplace {
+    private final searchRequest helper = new SearchRequest();
+
+    public void normalizeSearchOptions(...) {
+        helper.prepare(...);
+        helper.execute(...);
+    }
+}
+```
+
+For `SearchAndReplace`, prioritize collapsing duplicated call chains, moving validation into one place, and shrinking long workflow methods. The goal is not to add another abstraction layer everywhere, but to make the core `SearchAndReplace` path easier to reason about and test with the existing jEdit test case.",SearchAndReplaceTest.java,PASS,10,0,1
+org.gjt.sp.jedit.search.SearchAndReplace.java,"Please revise `SearchAndReplace` using jEdit-specific behavior rather than generic cleanup. Focus on the bug-prone paths covered by the current test case: validate null-sensitive inputs, preserve existing editor semantics, and keep state transitions explicit.
+
+Practical checks for `SearchAndReplace`:
+1. guard invalid or stale inputs before mutating shared state;
+2. keep one entry point for the main workflow and move side effects into private helpers;
+3. preserve existing jEdit conventions for UI/VFS/buffer interaction in this file;
+4. add comments only where an invariant or ordering constraint is non-obvious.
+
+Use small, behavior-preserving edits around `normalizeSearchOptions`, `findNextMatch`, and `replaceCurrentMatch` style workflows instead of broad rewrites.",SearchAndReplaceTest.java,PASS,5,5,0.5
+org.gjt.sp.jedit.textarea.JEditTextArea.java,"The class `JEditTextArea` appears too broad for its current responsibilities in caret movement, selection updates, repaint logic, and buffer/view synchronization. To reduce defect risk, keep the public workflow small and move mutable state and branch-heavy logic into focused collaborators. In jEdit terms, prefer a thin coordinator in `JEditTextArea` and delegate intermediate state handling to a helper such as `SelectionState`.
+
+```java
+// jEdit-oriented direction for JEditTextArea
+final class SelectionState {
+    void validate() { /* invariants for caret movement, selection updates, repaint logic, and buffer/view synchronization */ }
+    void updateFromInput(...) { /* normalize arguments and state */ }
+}
+
+public class JEditTextArea {
+    private final selectionState state = new SelectionState();
+
+    public void moveCaret(...) {
+        state.validate();
+        doMoveCaret(...);
+    }
+
+    private void doMoveCaret(...) { /* focused operation */ }
+    private void setSelection(...) { /* split another branch-heavy path */ }
+}
+```
+
+When editing this file, avoid adding more flags or shared mutable fields to `JEditTextArea`. Instead, extract branch-heavy blocks, isolate state validation, and keep each method focused on one jEdit action path.",JEditTextAreaTest.java,PASS,9,1,0.9
+org.gjt.sp.jedit.textarea.JEditTextArea.java,"Refactor `JEditTextArea` in a way that matches jEdit’s architecture. This class currently appears too large for its role in caret movement, selection updates, repaint logic, and buffer/view synchronization. Instead of a generic size reduction, extract one cohesive helper around the most change-prone responsibility and keep `JEditTextArea` as the coordinator.
+
+Suggested direction:
+- keep public entry points stable;
+- extract one helper for state preparation or validation;
+- break long methods into `moveCaret`, `setSelection`, and `scrollToCaret` level private steps;
+- avoid introducing unrelated utility classes that hide jEdit semantics.
+
+The preferred result is smaller methods, clearer state transitions, and a patch that still reads like jEdit code rather than a framework-neutral example.",JEditTextAreaTest.java,PASS,6,4,0.6
+org.gjt.sp.jedit.gui.DockableWindowManager.java,"`DockableWindowManager` shows signs of excessive outward coordination. In this jEdit module, the safer fix is to introduce a narrow internal helper that centralizes repeated external calls, so that `DockableWindowManager` keeps the control flow while the helper owns the integration details.
+
+```java
+// jEdit-oriented direction for DockableWindowManager
+final class DockableLayoutState {
+    void prepare(...) { /* collect and normalize inputs */ }
+    void execute(...) { /* encapsulate repeated external/service calls */ }
+}
+
+public class DockableWindowManager {
+    private final dockableLayoutState helper = new DockableLayoutState();
+
+    public void registerDockable(...) {
+        helper.prepare(...);
+        helper.execute(...);
+    }
+}
+```
+
+For `DockableWindowManager`, prioritize collapsing duplicated call chains, moving validation into one place, and shrinking long workflow methods. The goal is not to add another abstraction layer everywhere, but to make the core `DockableWindowManager` path easier to reason about and test with the existing jEdit test case.",DockableWindowManagerTest.java,PASS,10,0,1
+org.gjt.sp.jedit.gui.DockableWindowManager.java,"Please revise `DockableWindowManager` using jEdit-specific behavior rather than generic cleanup. Focus on the bug-prone paths covered by the current test case: validate null-sensitive inputs, preserve existing editor semantics, and keep state transitions explicit.
+
+Practical checks for `DockableWindowManager`:
+1. guard invalid or stale inputs before mutating shared state;
+2. keep one entry point for the main workflow and move side effects into private helpers;
+3. preserve existing jEdit conventions for UI/VFS/buffer interaction in this file;
+4. add comments only where an invariant or ordering constraint is non-obvious.
+
+Use small, behavior-preserving edits around `registerDockable`, `showDockable`, and `hideDockable` style workflows instead of broad rewrites.",DockableWindowManagerTest.java,PASS,5,5,0.5
+org.gjt.sp.jedit.options.GlobalOptions.java,"`GlobalOptions` appears tightly coupled to too many concrete collaborators. In jEdit, a practical fix is to depend on small internal abstractions or injected collaborators for the high-churn integration points, while keeping `GlobalOptions` responsible only for orchestration.
+
+```java
+// jEdit-oriented direction for GlobalOptions
+interface OptionPanelRegistryService {
+    void buildOptionPanels(...);
+}
+
+public class GlobalOptions {
+    private final OptionPanelRegistryService service;
+
+    public GlobalOptions(OptionPanelRegistryService service) {
+        this.service = service;
+    }
+
+    public void loadOptionValues(...) {
+        service.buildOptionPanels(...);
+    }
+}
+```
+
+In this file, replace direct construction of concrete services inside hot paths, isolate plugin/VFS/UI dependencies behind one seam, and keep jEdit-specific policies inside `GlobalOptions` instead of scattering them across many direct calls.",GlobalOptionsTest.java,PASS,10,0,1
+org.gjt.sp.jedit.options.GlobalOptions.java,"Please revise `GlobalOptions` using jEdit-specific behavior rather than generic cleanup. Focus on the bug-prone paths covered by the current test case: validate null-sensitive inputs, preserve existing editor semantics, and keep state transitions explicit.
+
+Practical checks for `GlobalOptions`:
+1. guard invalid or stale inputs before mutating shared state;
+2. keep one entry point for the main workflow and move side effects into private helpers;
+3. preserve existing jEdit conventions for UI/VFS/buffer interaction in this file;
+4. add comments only where an invariant or ordering constraint is non-obvious.
+
+Use small, behavior-preserving edits around `buildOptionPanels`, `loadOptionValues`, and `saveOptionValues` style workflows instead of broad rewrites.",GlobalOptionsTest.java,PASS,6,4,0.6
+org.gjt.sp.jedit.search.SearchAndReplace.java,"`SearchAndReplace` shows signs of excessive outward coordination. In this jEdit module, the safer fix is to introduce a narrow internal helper that centralizes repeated external calls, so that `SearchAndReplace` keeps the control flow while the helper owns the integration details.
+
+```java
+// jEdit-oriented direction for SearchAndReplace
+final class SearchRequest {
+    void prepare(...) { /* collect and normalize inputs */ }
+    void execute(...) { /* encapsulate repeated external/service calls */ }
+}
+
+public class SearchAndReplace {
+    private final searchRequest helper = new SearchRequest();
+
+    public void normalizeSearchOptions(...) {
+        helper.prepare(...);
+        helper.execute(...);
+    }
+}
+```
+
+For `SearchAndReplace`, prioritize collapsing duplicated call chains, moving validation into one place, and shrinking long workflow methods. The goal is not to add another abstraction layer everywhere, but to make the core `SearchAndReplace` path easier to reason about and test with the existing jEdit test case.",SearchAndReplaceTest.java,PASS,8,2,0.8
+org.gjt.sp.jedit.search.SearchAndReplace.java,"Review `SearchAndReplace` for jEdit-specific edge cases, especially around search option normalization, match execution, and replace workflow coordination. The main goal is to make failure handling explicit without changing the externally visible behavior.
+
+Focus your fix on:
+- null or stale objects crossing subsystem boundaries;
+- invalid index/range/state checks before the main action runs;
+- ordering constraints between `normalizeSearchOptions`, `findNextMatch`, and `replaceCurrentMatch`;
+- early returns for unsupported states instead of deep nested branching.
+
+A good patch for `SearchAndReplace` should make the preconditions obvious, isolate exceptional handling in a helper method, and keep the normal path short.",SearchAndReplaceTest.java,PASS,5,5,0.5
+org.gjt.sp.jedit.browser.VFSBrowser.java,"`VFSBrowser` appears tightly coupled to too many concrete collaborators. In jEdit, a practical fix is to depend on small internal abstractions or injected collaborators for the high-churn integration points, while keeping `VFSBrowser` responsible only for orchestration.
+
+```java
+// jEdit-oriented direction for VFSBrowser
+interface BrowserSessionService {
+    void loadDirectory(...);
+}
+
+public class VFSBrowser {
+    private final BrowserSessionService service;
+
+    public VFSBrowser(BrowserSessionService service) {
+        this.service = service;
+    }
+
+    public void refreshDirectory(...) {
+        service.loadDirectory(...);
+    }
+}
+```
+
+In this file, replace direct construction of concrete services inside hot paths, isolate plugin/VFS/UI dependencies behind one seam, and keep jEdit-specific policies inside `VFSBrowser` instead of scattering them across many direct calls.",VFSBrowserTest.java,PASS,10,0,1
+org.gjt.sp.jedit.browser.VFSBrowser.java,"Refactor `VFSBrowser` in a way that matches jEdit’s architecture. This class currently appears too large for its role in directory navigation, view refresh, and VFS interaction. Instead of a generic size reduction, extract one cohesive helper around the most change-prone responsibility and keep `VFSBrowser` as the coordinator.
+
+Suggested direction:
+- keep public entry points stable;
+- extract one helper for state preparation or validation;
+- break long methods into `loadDirectory`, `refreshDirectory`, and `selectEntry` level private steps;
+- avoid introducing unrelated utility classes that hide jEdit semantics.
+
+The preferred result is smaller methods, clearer state transitions, and a patch that still reads like jEdit code rather than a framework-neutral example.",VFSBrowserTest.java,PASS,6,4,0.6
+org.gjt.sp.jedit.textarea.JEditTextArea.java,"`JEditTextArea` shows signs of excessive outward coordination. In this jEdit module, the safer fix is to introduce a narrow internal helper that centralizes repeated external calls, so that `JEditTextArea` keeps the control flow while the helper owns the integration details.
+
+```java
+// jEdit-oriented direction for JEditTextArea
+final class SelectionState {
+    void prepare(...) { /* collect and normalize inputs */ }
+    void execute(...) { /* encapsulate repeated external/service calls */ }
+}
+
+public class JEditTextArea {
+    private final selectionState helper = new SelectionState();
+
+    public void moveCaret(...) {
+        helper.prepare(...);
+        helper.execute(...);
+    }
+}
+```
+
+For `JEditTextArea`, prioritize collapsing duplicated call chains, moving validation into one place, and shrinking long workflow methods. The goal is not to add another abstraction layer everywhere, but to make the core `JEditTextArea` path easier to reason about and test with the existing jEdit test case.",JEditTextAreaTest.java,PASS,10,0,1
+org.gjt.sp.jedit.textarea.JEditTextArea.java,"Please revise `JEditTextArea` using jEdit-specific behavior rather than generic cleanup. Focus on the bug-prone paths covered by the current test case: validate null-sensitive inputs, preserve existing editor semantics, and keep state transitions explicit.
+
+Practical checks for `JEditTextArea`:
+1. guard invalid or stale inputs before mutating shared state;
+2. keep one entry point for the main workflow and move side effects into private helpers;
+3. preserve existing jEdit conventions for UI/VFS/buffer interaction in this file;
+4. add comments only where an invariant or ordering constraint is non-obvious.
+
+Use small, behavior-preserving edits around `moveCaret`, `setSelection`, and `scrollToCaret` style workflows instead of broad rewrites.",JEditTextAreaTest.java,PASS,6,4,0.6
+org.gjt.sp.jedit.buffer.BufferIORequest.java,"The class `BufferIORequest` appears too broad for its current responsibilities in buffer load/save orchestration, I/O validation, and error reporting. To reduce defect risk, keep the public workflow small and move mutable state and branch-heavy logic into focused collaborators. In jEdit terms, prefer a thin coordinator in `BufferIORequest` and delegate intermediate state handling to a helper such as `IOContext`.
+
+```java
+// jEdit-oriented direction for BufferIORequest
+final class IOContext {
+    void validate() { /* invariants for buffer load/save orchestration, I/O validation, and error reporting */ }
+    void updateFromInput(...) { /* normalize arguments and state */ }
+}
+
+public class BufferIORequest {
+    private final iOContext state = new IOContext();
+
+    public void readBuffer(...) {
+        state.validate();
+        doReadBuffer(...);
+    }
+
+    private void doReadBuffer(...) { /* focused operation */ }
+    private void writeBuffer(...) { /* split another branch-heavy path */ }
+}
+```
+
+When editing this file, avoid adding more flags or shared mutable fields to `BufferIORequest`. Instead, extract branch-heavy blocks, isolate state validation, and keep each method focused on one jEdit action path.",BufferIORequestTest.java,PASS,8,2,0.8
+org.gjt.sp.jedit.buffer.BufferIORequest.java,"Review `BufferIORequest` for jEdit-specific edge cases, especially around buffer load/save orchestration, I/O validation, and error reporting. The main goal is to make failure handling explicit without changing the externally visible behavior.
+
+Focus your fix on:
+- null or stale objects crossing subsystem boundaries;
+- invalid index/range/state checks before the main action runs;
+- ordering constraints between `readBuffer`, `writeBuffer`, and `handleIOException`;
+- early returns for unsupported states instead of deep nested branching.
+
+A good patch for `BufferIORequest` should make the preconditions obvious, isolate exceptional handling in a helper method, and keep the normal path short.",BufferIORequestTest.java,FAIL,4,6,0.4

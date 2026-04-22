@@ -16,7 +16,7 @@ CEOS addresses both challenges simultaneously. It operates as a powerful data sy
    
    * Deriving actionable **Defect Reduction Plans (Action Rules)**, which, when coupled with **refatoring methods (e.g., refactoring.guru)** and  **Large Language Models (LLMs)**, provide concrete "How-to-fix" guidance.
      
-     <img src="file:///D:/CEOS/overview.png" title="" alt="overview" data-align="inline">
+     <img src="./overview.png" alt="overview" data-align="inline">
 
 ---
 
